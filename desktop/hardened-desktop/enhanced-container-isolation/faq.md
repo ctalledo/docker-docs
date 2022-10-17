@@ -1,6 +1,6 @@
 ---
 title: FAQs and known issues
-description: FAQ for Enhanced Container Isolation 
+description: FAQ for Enhanced Container Isolation
 keywords: enhanced container isolation, security, faq, sysbox
 toc_max: 2
 ---
@@ -12,40 +12,129 @@ toc_max: 2
 <div class="tab-content">
 <div id="tab3" class="tab-pane fade in active" markdown="1">
 
-### With Enhanced Container Isolation enabled, can the user still override the `--runtime` flag from the CLI ?
+```
+TODO: REMOVE ME
 
-No. With Hardened Desktop enabled, Sysbox is locked as the default (and only) runtime. If a user attempts to override the runtime by launching a container with the standard `runc` runtime, for example `docker run --runtime=runc`, this request is ignored and the container is created through the Sysbox runtime. 
+Outline
+- Workloads that don't yet run with ECI
+- Troubleshooting ("unknown runtime sysbox-runc", "can't mount because it's restricted", etc.)
+- Stuff that is not protected by ECI yet (k8s, extensions, dev-envs)
+```
 
-The reason `runc` is disallowed with Enhanced Container Isolation is because it allows users to run as root on the Docker Desktop Linux VM, thereby providing them with implicit control of the VM and the ability to modify the administrative configurations for Docker Desktop, for example.
+### What is Enhanced Container Isolation (ECI)
 
-### With Enhanced Container Isolation enabled, can the user still use the `--privileged` flag from the CLI?
+It's a new feature in Docker Desktop Business meant to harden container
+security. It's particularly useful for organizations with stringent security
+requirements.
 
-Yes, with Enhanced Container Isolation the container is only privileged within its assigned Linux user-namespace. It is not privileged within the Docker Desktop Linux VM.
+### How is container security hardened with ECI?
 
-For example, the container’s init process will have all Linux capabilities enabled, have read/write access to the kernel’s `/proc` and `/sys`, run without system call or other restrictions normally imposed by Docker on regular containers (for example, seccomp, AppArmor), and see all host devices under the container’s `/dev` directory.
+Via a number of advanced techniques (Linux user-namespace, mount restrictions,
+system call vetting, etc.), made possible by the inclusion of the Sysbox container
+runtime inside the Docker Desktop Linux VM.  See [How it Works](how-eci-works.md) for more.
 
-However, because Sysbox launches each container within a dedicated Linux user-namespace and vets sensitive accesses to the kernel, the container can only access resources assigned to it. For example, the container can’t access resources under `/proc` and `/sys` that are not namespaced. Although it can see all host devices under `/dev`, it won’t have permission to access them. Also, while the container can use system calls such as “mount” and “umount”, Sysbox prevents the container from using them to modify the container’s chroot jail.
+### How do I enable ECI?
 
-This makes running a privileged container with Enhanced Container Isolation much safer than a privileged container launched with the standard runc, which offers almost no isolation.
+It's enabled via the `admin-settings.json` file. See [here](index.md#how-do-i-enable-enhanced-container-isolation) for more info.
 
-### Why not just restrict usage of the `--privileged` flag with Enhanced Container Isolation?
+### Do I need to change the way I use Docker when ECI is enabled?
 
-Privileged containers are typically used to run advanced workloads in containers, for example Docker-in-Docker, to perform kernel operations such as loading modules, or to access hardware devices. We aim to allow running advanced workloads, but deny the ability to perform kernel operations or access hardware devices.
+No, you can continue to use Docker as usual (docker run, build, networking, volumes, etc). ECI will be mostly transparent to you.
 
-By allowing the `-–privileged` flag but restricting its impact within the container's user-namespace, it’s possible to do this.
+### Do all container workloads work well with ECI?
+
+Most container workloads do, a few do not (yet). For the few workloads that
+don't yet work with ECI, Docker will continue to improve the feature to reduce
+this to a minimum.
+
+### Can I run privileged containers with ECI?
+
+Yes, you can use the `--privileged` flag in containers but unlike privileged
+containers without ECI, the container can only use it's elevated privileges to
+access resources assigned to the container; it can't access global kernel
+resources in the Docker Desktop Linux VM. This allows you to run privileged
+containers securely. More info [here](how-eci-works.md#privileged-containers-are-also-secured).
+
+### Will all privileged container workloads run with ECI?
+
+No; privileged container workloads that wish to access global (i.e.,
+non-namespaced) kernel resources inside the Docker Desktop Linux VM won't
+work. For example, you can't use a privileged container to load a kernel module.
+
+### Why not just restrict usage of the `--privileged` flag with ECI?
+
+Privileged containers are typically used to run advanced workloads in
+containers, for example Docker-in-Docker or Kubernetes-in-Docker (KinD), to
+perform kernel operations such as loading modules, or to access hardware
+devices.
+
+ECI allows running advanced workloads, but denies the ability to perform
+kernel operations or access hardware devices.
+
+### Does ECI restrict bind-mounts inside the container?
+
+Yes, it restricts bind-mounts of directories located in the Docker Desktop Linux
+VM into the container.
+
+It does not restrict bind-mounts of your host machine files into the container,
+as configured via Docker Desktop's "Settings -> Resources -> File Sharing" menu.
+
+### Does ECI protect all containers launched with Docker Desktop
+
+It protects all containers launched by users via `docker create` and `docker
+run`. It does not yet protect Docker Desktop Kubernetes pods, Extension
+Containers, and Dev Environments.
+
+### Does ECI affect performance of containers?
+
+ECI has very little impact on the performance of containers. The exception is
+for containers that perform lots of `mount` and `umount` system calls, as these
+are trapped and vetted by the Sysbox container runtime.
+
+### With ECI, can the user still override the `--runtime` flag from the CLI ?
+
+No. With ECI enabled, Sysbox is locked as the default (and only) runtime for
+containers deployed by Docker Desktop users. If a user attempts to override the
+runtime (e.g., `docker run --runtime=runc`), this request is ignored and the
+container is created through the Sysbox runtime.
+
+The reason `runc` is disallowed with Enhanced Container Isolation is because it
+allows users to run as "true root" on the Docker Desktop Linux VM, thereby
+providing them with implicit control of the VM and the ability to modify the
+administrative configurations for Docker Desktop, for example.
+
+### How is ECI different from Docker Engine's userns-remap mode
+
+See [here](how-eci-works.md#enhanced-container-isolation-vs-docker-userns--remap-mode).
+
+### How is ECI different from Rootless Docker
+
+See [here](how-eci-works.md#enhanced-container-isolation-vs-rootless-docker)
 
 <hr>
 </div>
 <div id="tab4" class="tab-pane fade" markdown="1">
 
 #### Incompatibility with WSL
-Enhanced Container Isolation does not currently work when Docker Desktop runs on Windows with WSL/WSL2. This is due to some limitations of the WSL/WSL2 Linux Kernel. As a result, to use Enhanced Container Isolation on Windows, you must configure Docker Desktop to use Hyper-V. This can be enforced using Admin Controls. For more information, see [Settings Management](../settings-management/index.md).
+Enhanced Container Isolation (ECI) does not currently work when Docker Desktop runs on
+Windows with WSL/WSL2. This is due to some limitations of the WSL/WSL2 Linux
+Kernel. As a result, to use Enhanced Container Isolation on Windows, you must
+configure Docker Desktop to use Hyper-V. This can be enforced using Admin
+Controls. For more information, see [Settings
+Management](../settings-management/index.md).
 
 #### Kubernetes pods and extension containers are not yet protected
-When Enhanced Container Isolation is enabled, Kubernetes pods and extension containers are not yet protected. A malicious or privileged pod or extension container can compromise the Docker Desktop Linux VM and bypass security controls. 
+When Enhanced Container Isolation is enabled, Kubernetes pods and extension
+containers are not yet protected. A malicious or privileged pod or extension
+container can compromise the Docker Desktop Linux VM and bypass security
+controls.
 
 #### Use in production
-Users may experience some differences between running a container in Docker Desktop with Enhanced Container Isolation enabled, and running that same container in production. This is because in production the container may run on another runtime, typically the OCI runc.
+Users may experience some differences between running a container in Docker
+Desktop with Enhanced Container Isolation enabled, and running that same
+container in production. This is because ECI uses the Sysbox container runtime
+while in production the container may run on another runtime, typically the OCI
+runc.
 
 <hr>
 </div>
