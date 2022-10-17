@@ -6,19 +6,19 @@ title: What is Enhanced Container Isolation?
 
 >**Note**
 >
->Enhanced Container Isolation is available to Docker Business customers only. 
+>Enhanced Container Isolation is available to Docker Business customers only.
 
 Enhanced Container Isolation provides an additional layer of security that uses a variety of advanced techniques to harden container isolation without impacting developer productivity. It is available with [Docker Desktop 4.13.0 or later](../../release-notes.md).
 
 These techniques include:
 - Running all containers unprivileged through the Linux user-namespace.
-- Restricting containers from modifying Docker Desktop VM settings.
-- Vetting some critical system calls to prevent container escapes, and partially virtualizing portions of `/proc` and `/sys` inside the container for further isolation. 
+- Restricting containers from modifying Docker Desktop Virtual Machine (VM) settings.
+- Vetting some critical system calls to prevent container escapes, and partially virtualizing portions of `/proc` and `/sys` inside the container for further isolation.
 - Preventing console access to the Docker Desktop VM.
 
-This is done automatically and with minimal functional or performance impact. 
+This is done automatically and with minimal functional or performance impact.
 
-Enhanced Container Isolation helps ensure strong container isolation and also locks in any security configurations that have been created, for instance through [Registry Access Management policies](../registry-access-management.md) or with [Settings Management](../settings-management/index.md). 
+Enhanced Container Isolation helps ensure strong container isolation and also locks in any security configurations that have been created, for instance through [Registry Access Management policies](../registry-access-management.md) or with [Settings Management](../settings-management/index.md).
 
 >**Note**
 >
@@ -31,7 +31,7 @@ Enhanced Container Isolation helps ensure strong container isolation and also lo
 
 ### What happens when Enhanced Container Isolation is enabled?
 
-When Enhanced Container Isolation is enabled using [Settings Management](../settings-management/index.md), the following features are enabled: 
+When Enhanced Container Isolation is enabled using [Settings Management](../settings-management/index.md), the following features are enabled:
 
 - All user containers are automatically run in Linux User Namespaces which ensures stronger isolation.
 - The root user in the container maps to an unprivileged user at VM level.
@@ -74,12 +74,12 @@ Once this is done, developers need to either quit, re-launch, and sign in to Doc
 
 ### What do users see when this setting is enforced?
 
-When Enhanced Container Isolation is enabled, users see that containers run within a Linux user-namespace. 
+When Enhanced Container Isolation is enabled, users see that containers run within a Linux user-namespace.
 
 To check, run:
 
 ```
-$ docker run -it --rm alpine / # cat /proc/self/uid_map 
+$ docker run -it --rm alpine / # cat /proc/self/uid_map
 ```
 
 The following output displays:
