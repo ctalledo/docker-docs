@@ -117,11 +117,11 @@ access management, network proxies, etc.)
 
 With Enhanced Container Isolation, privileged containers can no longer do this:
 the combination of the Linux user-namespace and other security techniques used
-by Sysbox ensures that processes inside privileged container can only access
+by Sysbox ensures that processes inside a privileged container can only access
 resources assigned to the container.
 
 For example, Enhanced Container Isolation ensures privileged containers can't
-access Docker Dekstop network-settings via the sysfs (`/sys`) filesystem in
+access Docker Desktop network-settings via the sysfs (`/sys`) filesystem in
 the container:
 
 ```
@@ -129,10 +129,6 @@ $ docker run --privileged -it --rm alpine
 
 TODO: COME UP WITH GOOD EXAMPLE, LIKELY EBPF RELATED
 ```
-
-Some advanced container workloads require privileged containers (e.g.,
-Docker-in-Docker, Kubernetes-in-Docker, etc.) With Enhanced Container Isolation
-you can still run such workloads but do so much more securely than before.
 
 > Note
 >
@@ -142,6 +138,10 @@ you can still run such workloads but do so much more securely than before.
 > modify global kernel settings (e.g., loading a kernel module) will not work
 > properly as they will receive "permission denied" error when attempting such
 > operations.
+
+Some advanced container workloads require privileged containers (e.g.,
+Docker-in-Docker, Kubernetes-in-Docker, etc.) With Enhanced Container Isolation
+you can still run such workloads but do so much more securely than before.
 
 #### Bind-Mount Restrictions
 
