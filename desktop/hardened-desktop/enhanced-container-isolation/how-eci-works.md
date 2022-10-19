@@ -120,28 +120,73 @@ the combination of the Linux user-namespace and other security techniques used
 by Sysbox ensures that processes inside a privileged container can only access
 resources assigned to the container.
 
-For example, Enhanced Container Isolation ensures privileged containers can't
-access Docker Desktop network-settings via the sysfs (`/sys`) filesystem in
-the container:
-
-```
-$ docker run --privileged -it --rm alpine
-
-TODO: COME UP WITH GOOD EXAMPLE, LIKELY EBPF RELATED
-```
-
 > Note
 >
 > Enhanced Container Isolation does not prevent users from launching privileged
-> containers, but rather makes sure they run securely by ensuring that they can
-> only modify resources associated with the container. Privileged workloads that
-> modify global kernel settings (e.g., loading a kernel module) will not work
-> properly as they will receive "permission denied" error when attempting such
-> operations.
+> containers, but rather runs them securely by ensuring that they can only
+> modify resources associated with the container. Privileged workloads that
+> modify global kernel settings (e.g., loading a kernel module, changing BPF
+> settings, etc.) will not work properly as they will receive "permission
+> denied" error when attempting such operations.
 
-Some advanced container workloads require privileged containers (e.g.,
+For example, Enhanced Container Isolation ensures privileged containers can't
+access Docker Desktop network settings in the Linux VM (configured via Berkeley
+Packet Filters (BPF));
+
+```
+$ docker run --privileged djs55/bpftool map show
+Error: can't get next map: Operation not permitted
+```
+
+In contrast, without Enhanced Container Isolation, privileged containers
+can easily do this:
+
+```
+$ docker run --privileged djs55/bpftool map show
+17: ringbuf  name blocked_packets  flags 0x0
+        key 0B  value 0B  max_entries 16777216  memlock 0B
+18: hash  name allowed_map  flags 0x0
+        key 4B  value 4B  max_entries 10000  memlock 81920B
+20: lpm_trie  name allowed_trie  flags 0x1
+        key 8B  value 8B  max_entries 1024  memlock 16384B
+```
+
+Note that some advanced container workloads require privileged containers (e.g.,
 Docker-in-Docker, Kubernetes-in-Docker, etc.) With Enhanced Container Isolation
 you can still run such workloads but do so much more securely than before.
+
+#### Containers can't share namespaces with the Linux VM
+
+When Enhanced Container Isolation is enabled, containers can't share Linux
+namespaces with the host (e.g., pid, network, UTS, etc.) as that essentially
+breaks isolation.
+
+For example, sharing the pid namespace will fail:
+
+```
+$ docker run -it --rm --pid=host alpine
+docker: Error response from daemon: failed to create shim task: OCI runtime create failed: error in the container spec: invalid or unsupported container spec: sysbox containers can't share namespaces [pid] with the host (because they use the linux user-namespace for isolation): unknown.
+```
+
+Similary sharing the network namespace will fail:
+
+```
+docker run -it --rm --network=host alpine
+docker: Error response from daemon: failed to create shim task: OCI runtime create failed: error in the container spec: invalid or unsupported container spec: sysbox containers can't share a network namespace with the host (because they use the linux user-namespace for isolation): unknown.
+```
+
+In addition, the `--userns=host` flag (to disable the user-namespace on the
+container) is ignored:
+
+```
+$ docker run -it --rm --userns=host alpine
+/ # cat /proc/self/uid_map
+         0     100000      65536
+```
+
+Finally, Docker build `--network=host` and Docker buildx entitlements
+(`network.host`, `security.insecure`) are not allowed. Builds that require these
+will not work properly.
 
 #### Bind-Mount Restrictions
 
@@ -168,7 +213,7 @@ container full access (i.e., read and write) to the Docker Engine's
 configuration.
 
 Of course, bind-mounts of host files continue to work as usual. For example,
-assuming the user configures Docker Desktop to file share her $HOME directory,
+assuming a user configures Docker Desktop to file share her $HOME directory,
 she can bind-mount it into the container:
 
 ```
@@ -273,24 +318,35 @@ emulated. This serves several purposes, such as hiding sensitive host
 information inside the container and namespacing host kernel resources that are
 not yet namespaced by the Linux kernel itself.
 
-As a trivial example, when Enhanced Container Isolation is enabled, the
-"/proc/uptime" file shows the uptime of the container itself, not that
-of the Docker Desktop Linux VM.
+As a simple example, when Enhanced Container Isolation is enabled the
+"/proc/uptime" file shows the uptime of the container itself, not that of the
+Docker Desktop Linux VM:
 
 ```
-TODO: COME UP WITH OTHER EXAMPLES
+$ docker run -it --rm alpine
+/ # cat /proc/uptime
+5.86 5.86
 ```
+
+In constrast, without Enhanced Container Isolation you would see the uptime of
+the Docker Desktop Linux VM. Though this is a trivial example, it shows how
+Enhanced Container Isolation aims to prevent the Linux VM's configuration
+information from leaking into the container so as to make it more difficult to
+breach the VM.
+
+In addtion several other resources under "/proc/sys" that are not namespaced by
+the Linux Kernel are also emulated inside the container. That is, each container
+sees a separate view of each such resource and Sysbox reconciles the values
+accross the containers when programming the corresponding Linux kernel setting.
+
+This has the advantage of enabling container workloads that would otherwire
+require truly privileged containers to access such non-namespaced kernel
+resources to run with Enhanced Container Isolation enabled, thereby improving
+security.
 
 ### Limitations of Enhanced Container Isolation
 
-TODO:
-
-* sharing host namespaces
-
-* some privileged workloads don't work
-
-* some other workloads (nfs server) don't work yet
-
+Please refer to the [Limitations and Known Issues](faq.md) section.
 
 ### Enhanced Container Isolation vs Docker Userns-Remap Mode
 

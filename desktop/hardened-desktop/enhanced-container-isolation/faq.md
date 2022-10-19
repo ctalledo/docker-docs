@@ -7,7 +7,7 @@ toc_max: 2
 
 <ul class="nav nav-tabs">
   <li class="active"><a data-toggle="tab" data-target="#tab3">FAQs</a></li>
-  <li><a data-toggle="tab" data-target="#tab4">Known issues</a></li>
+  <li><a data-toggle="tab" data-target="#tab4">Limitations and Known Issues</a></li>
 </ul>
 <div class="tab-content">
 <div id="tab3" class="tab-pane fade in active" markdown="1">
@@ -123,18 +123,40 @@ configure Docker Desktop to use Hyper-V. This can be enforced using Admin
 Controls. For more information, see [Settings
 Management](../settings-management/index.md).
 
-#### Kubernetes pods and extension containers are not yet protected
-When Enhanced Container Isolation is enabled, Kubernetes pods and extension
-containers are not yet protected. A malicious or privileged pod or extension
-container can compromise the Docker Desktop Linux VM and bypass security
-controls.
+#### Kubernetes pods are not yet protected
+Kubernetes pods are not yet protected by ECI. A malicious or privileged pod can
+compromise the Docker Desktop Linux VM and bypass security controls. We expect
+to improve on this in future versions of Docker Desktop.
+
+#### Extension Containers are not yet protected
+Extension containers are also not yet protected by ECI. Ensure you extension
+containers come from trusted entities to avoid issues. We expect to improve on
+this in future versions of Docker Desktop.
+
+#### Docker Desktop dev environments are not yet protected
+Containers launched by the Docker Desktop Dev Environments feature are not yet
+protected either. We expect to improve on this in future versions of Docker
+Desktop.
 
 #### Use in production
-Users may experience some differences between running a container in Docker
-Desktop with Enhanced Container Isolation enabled, and running that same
-container in production. This is because ECI uses the Sysbox container runtime
-while in production the container may run on another runtime, typically the OCI
-runc.
+In general users should not experience differences between running a container
+in Docker Desktop with ECI enabled (which uses the Sysbox runtime), and running
+that same container in production (via the standard OCI "runc" runtime).
+
+However in some cases (typically when running advanced / privileged workloads in
+containers), users may experience some differences. Particularly, the container
+may run with ECI but not with runc, or vice-versa.
+
+#### Some container workloads don't work with ECI
+Enhanced Container Isolation is still a work-in-progress, and while most
+container workloads run without problem, there are a few that don't yet work.
+
+* NFS server containers
+
+* TODO: find any others.
+
+We expect to improve on this in future versions of Docker
+Desktop.
 
 <hr>
 </div>
