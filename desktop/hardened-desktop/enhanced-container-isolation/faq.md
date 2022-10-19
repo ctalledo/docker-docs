@@ -115,13 +115,18 @@ See [here](how-eci-works.md#enhanced-container-isolation-vs-rootless-docker)
 </div>
 <div id="tab4" class="tab-pane fade" markdown="1">
 
-#### Incompatibility with WSL
+#### Incompatibility with Windows Subsystem for Linux (WSL)
 Enhanced Container Isolation (ECI) does not currently work when Docker Desktop runs on
 Windows with WSL/WSL2. This is due to some limitations of the WSL/WSL2 Linux
 Kernel. As a result, to use Enhanced Container Isolation on Windows, you must
 configure Docker Desktop to use Hyper-V. This can be enforced using Admin
 Controls. For more information, see [Settings
 Management](../settings-management/index.md).
+
+#### Docker build and buildx has some restrictions
+With ECI enabled, Docker build `--network=host` and Docker buildx entitlements
+(`network.host`, `security.insecure`) are not allowed. Builds that require
+these will not work properly.
 
 #### Kubernetes pods are not yet protected
 Kubernetes pods are not yet protected by ECI. A malicious or privileged pod can
@@ -146,17 +151,6 @@ that same container in production (via the standard OCI "runc" runtime).
 However in some cases (typically when running advanced / privileged workloads in
 containers), users may experience some differences. Particularly, the container
 may run with ECI but not with runc, or vice-versa.
-
-#### Some container workloads don't work with ECI
-Enhanced Container Isolation is still a work-in-progress, and while most
-container workloads run without problem, there are a few that don't yet work.
-
-* NFS server containers
-
-* TODO: find any others.
-
-We expect to improve on this in future versions of Docker
-Desktop.
 
 <hr>
 </div>
