@@ -12,15 +12,6 @@ toc_max: 2
 <div class="tab-content">
 <div id="tab3" class="tab-pane fade in active" markdown="1">
 
-```
-TODO: REMOVE ME
-
-Outline
-- Workloads that don't yet run with ECI
-- Troubleshooting ("unknown runtime sysbox-runc", "can't mount because it's restricted", etc.)
-- Stuff that is not protected by ECI yet (k8s, extensions, dev-envs)
-```
-
 ### What is Enhanced Container Isolation (ECI)
 
 It's a new feature in Docker Desktop Business meant to harden container
@@ -64,7 +55,7 @@ work. For example, you can't use a privileged container to load a kernel module.
 ### Why not just restrict usage of the `--privileged` flag with ECI?
 
 Privileged containers are typically used to run advanced workloads in
-containers, for example Docker-in-Docker or Kubernetes-in-Docker (KinD), to
+containers, for example Docker-in-Docker or Kubernetes-in-Docker, to
 perform kernel operations such as loading modules, or to access hardware
 devices.
 
@@ -120,8 +111,7 @@ Enhanced Container Isolation (ECI) does not currently work when Docker Desktop r
 Windows with WSL/WSL2. This is due to some limitations of the WSL/WSL2 Linux
 Kernel. As a result, to use Enhanced Container Isolation on Windows, you must
 configure Docker Desktop to use Hyper-V. This can be enforced using Admin
-Controls. For more information, see [Settings
-Management](../settings-management/index.md).
+Controls. For more information, see [Settings Management](../settings-management/index.md).
 
 #### Docker build and buildx has some restrictions
 With ECI enabled, Docker build `--network=host` and Docker buildx entitlements
